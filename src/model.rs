@@ -128,3 +128,60 @@ impl<B: Backend> CausalSelfAttention<B> {
         self.out_proj.forward(out)
     }
 }
+
+// ---------- Feed-Forward Network --------------------------------------------
+
+#[derive(Module, Debug)]
+pub struct FeedForward<B: Backend> {
+    fc1: nn::Linear<B>,
+    fc2: nn::Linear<B>,
+    dropout: nn::Dropout,
+}
+
+impl<B: Backend> FeedForward<B> {
+    pub fn new(config: &GptConfig, device: &B::Device) -> Self {
+        Self {
+            // Expand to 4× n_embd then project back — standard GPT ratio
+            fc1: nn::LinearConfig::new(config.n_embd, 4 * config.n_embd).init(device),
+            fc2: nn::LinearConfig::new(4 * config.n_embd, config.n_embd).init(device),
+            dropout: nn::DropoutConfig::new(config.dropout).init(),
+        }
+    }
+
+    /// x: [batch, seq_len, n_embd]  →  [batch, seq_len, n_embd]
+    pub fn forward(&self, x: Tensor<B, 3>) -> Tensor<B, 3> {
+        let x = self.fc1.forward(x);
+        let x = activation::gelu(x);
+        let x = self.fc2.forward(x);
+        self.dropout.forward(x)
+    }
+}
+
+// ---------- Transformer Block -----------------------------------------------
+
+#[derive(Module, Debug)]
+pub struct TransformerBlock<B: Backend> {
+    ln1: nn::LayerNorm<B>,
+    attn: CausalSelfAttention<B>,
+    ln2: nn::LayerNorm<B>,
+    ffn: FeedForward<B>,
+}
+
+impl<B: Backend> TransformerBlock<B> {
+    pub fn new(config: &GptConfig, device: &B::Device) -> Self {
+        Self {
+            ln1: nn::LayerNormConfig::new(config.n_embd).init(device),
+            attn: CausalSelfAttention::new(config, device),
+            ln2: nn::LayerNormConfig::new(config.n_embd).init(device),
+            ffn: FeedForward::new(config, device),
+        }
+    }
+
+    /// x: [batch, seq_len, n_embd]  →  [batch, seq_len, n_embd]
+    pub fn forward(&self, x: Tensor<B, 3>) -> Tensor<B, 3> {
+        // Pre-norm attention with residual
+        let x = x.clone() + self.attn.forward(self.ln1.forward(x));
+        // Pre-norm feed-forward with residual
+        x.clone() + self.ffn.forward(self.ln2.forward(x))
+    }
+}
