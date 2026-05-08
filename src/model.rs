@@ -29,16 +29,16 @@ impl<B: Backend> Embeddings<B> {
         }
     }
 
-    /// x: [batch, seq_len]  →  [batch, seq_len, n_embd]
-    pub fn forward(&self, x: Tensor<B, 2, Int>) -> Tensor<B, 3> {
-        let [_batch, seq_len] = x.dims();
-        let device = x.device();
+    /// tokens: [batch, seq_len]  →  [batch, seq_len, n_embd]
+    pub fn forward(&self, tokens: Tensor<B, 2, Int>) -> Tensor<B, 3> {
+        let [_batch, seq_len] = tokens.dims();
+        let device = tokens.device();
 
         // [0, 1, ..., seq_len-1] then unsqueeze to [1, seq_len] for broadcasting
         let positions = Tensor::<B, 1, Int>::arange(0..seq_len as i64, &device)
             .unsqueeze::<2>();
 
-        let tok = self.token_emb.forward(x);       // [batch, seq_len, n_embd]
+        let tok = self.token_emb.forward(tokens);  // [batch, seq_len, n_embd]
         let pos = self.pos_emb.forward(positions); // [1,     seq_len, n_embd]
 
         tok + pos
