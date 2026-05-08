@@ -1,26 +1,40 @@
 mod data;
+mod model;
+
+use burn::prelude::*;
+use burn_ndarray::NdArray;
 
 use data::{fetch_shakespeare, TextDataset, Vocabulary};
 use burn::data::dataset::Dataset;
+use model::{Embeddings, GptConfig};
+
+type B = NdArray;
 
 fn main() {
+    let device = Default::default();
+
+    // --- Data pipeline ---
     let text = fetch_shakespeare();
     let vocab = Vocabulary::from_text(&text);
     let tokens = vocab.encode(&text);
 
     println!("Text length  : {} chars", text.len());
     println!("Vocab size   : {} unique chars", vocab.size());
-    println!("Token count  : {}", tokens.len());
 
     let block_size = 256;
-    let (train, val) = TextDataset::train_val_split(tokens, block_size, 0.1);
-    println!("Train samples: {}", train.len());
-    println!("Val samples  : {}", val.len());
+    let (train, _val) = TextDataset::train_val_split(tokens, block_size, 0.1);
 
-    // Peek at one sample
+    // --- Embeddings smoke test ---
+    let config = GptConfig::new(vocab.size(), block_size, 128, 4, 4);
+    let embeddings = Embeddings::<B>::new(&config, &device);
+
     let sample = train.get(0).unwrap();
-    let input_text = vocab.decode(&sample.input);
-    let target_text = vocab.decode(&sample.target);
-    println!("\nInput  (first 40 chars): {:?}", &input_text[..40]);
-    println!("Target (first 40 chars): {:?}", &target_text[..40]);
+    let input: Tensor<B, 2, Int> = Tensor::from_data(
+        TensorData::new(sample.input, [1, block_size]),
+        &device,
+    );
+
+    let embedded = embeddings.forward(input);
+    println!("Embedding output shape: {:?}", embedded.dims());
+    // expected: [1, 256, 128]
 }
