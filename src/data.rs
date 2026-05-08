@@ -13,7 +13,7 @@ const DATA_PATH: &str = "data/input.txt";
 
 // ---------- Download --------------------------------------------------------
 
-pub fn fetch_shakespeare() -> String {
+pub fn fetch_tiny_shakespeare() -> String {
     if !Path::new(DATA_PATH).exists() {
         fs::create_dir_all("data").expect("failed to create data/");
         println!("Downloading tinyshakespeare...");
