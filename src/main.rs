@@ -6,7 +6,7 @@ use burn_ndarray::NdArray;
 
 use burn::data::dataset::Dataset;
 use data::{fetch_tiny_shakespeare, TextDataset, Vocabulary};
-use model::{Embeddings, GptConfig, TransformerBlock};
+use model::GptConfig;
 
 type B = NdArray;
 
@@ -21,8 +21,9 @@ fn main() {
     let (train, _val) = TextDataset::train_val_split(tokens, block_size, 0.1);
 
     let config = GptConfig::new(vocab.size(), block_size, 128, 1, 1);
-    let embeddings = Embeddings::<B>::new(&config, &device);
-    let block = TransformerBlock::<B>::new(&config, &device);
+    let model = config.init::<B>(&device);
+
+    println!("Parameters: {}", model.num_params());
 
     let sample = train.get(0).unwrap();
     let tensor_tokens: Tensor<B, 2, Int> = Tensor::from_data(
@@ -30,8 +31,7 @@ fn main() {
         &device,
     );
 
-    let tensor_embedded = embeddings.forward(tensor_tokens);  // [1, 256, 128]
-    let tensor_out = block.forward(tensor_embedded);          // [1, 256, 128]
-    println!("Block output shape: {:?}", tensor_out.dims());
-    // expected: [1, 256, 128]
+    let logits = model.forward(tensor_tokens);
+    println!("Logits shape: {:?}", logits.dims());
+    // expected: [1, 256, 65]  — 65 scores per position, one per vocab character
 }

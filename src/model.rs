@@ -92,7 +92,7 @@ impl<B: Backend> CausalSelfAttention<B> {
         let [batch, seq_len, _n_embd] = tokens.dims();
         let device = tokens.device();
 
-        // Project to queries, keys, values — each: [batch, seq_len, n_embd]
+        // Project token embedding to queries, keys, values — each: [batch, seq_len, n_embd]
         // e.g. with batch=1, seq_len=256, n_embd=128: [1, 256, 128]
         let q = self.q_proj.forward(tokens.clone());
         let k = self.k_proj.forward(tokens.clone());
@@ -186,5 +186,46 @@ impl<B: Backend> TransformerBlock<B> {
         let x = x.clone() + self.attn.forward(self.ln1.forward(x));
         // Pre-norm feed-forward with residual
         x.clone() + self.ffn.forward(self.ln2.forward(x))
+    }
+}
+
+// ---------- Full GPT Model --------------------------------------------------
+
+#[derive(Module, Debug)]
+pub struct Gpt<B: Backend> {
+    embeddings: Embeddings<B>,
+    blocks: Vec<TransformerBlock<B>>,
+    ln_f: nn::LayerNorm<B>,   // final layer norm before the output projection
+    lm_head: nn::Linear<B>,   // projects n_embd → vocab_size (the logits)
+}
+
+impl<B: Backend> Gpt<B> {
+    /// tokens:  [batch, seq_len]
+    /// returns: [batch, seq_len, vocab_size]  (logits — raw, pre-softmax scores)
+    pub fn forward(&self, tokens: Tensor<B, 2, Int>) -> Tensor<B, 3> {
+        let mut x = self.embeddings.forward(tokens);
+
+        for block in &self.blocks {
+            x = block.forward(x);
+        }
+
+        let x = self.ln_f.forward(x);
+        self.lm_head.forward(x)
+    }
+}
+
+impl GptConfig {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> Gpt<B> {
+        Gpt {
+            embeddings: Embeddings::new(self, device),
+            blocks: (0..self.n_layer)
+                .map(|_| TransformerBlock::new(self, device))
+                .collect(),
+            ln_f: nn::LayerNormConfig::new(self.n_embd).init(device),
+            // No bias on lm_head — standard GPT convention
+            lm_head: nn::LinearConfig::new(self.n_embd, self.vocab_size)
+                .with_bias(false)
+                .init(device),
+        }
     }
 }
