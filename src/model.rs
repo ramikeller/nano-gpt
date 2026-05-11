@@ -92,13 +92,16 @@ impl<B: Backend> CausalSelfAttention<B> {
         let [batch, seq_len, _n_embd] = tokens.dims();
         let device = tokens.device();
 
-        // Project to queries, keys, values
-        let q = self.q_proj.forward(tokens.clone()); // [batch, seq_len, n_embd]
-        let k = self.k_proj.forward(tokens.clone()); // [batch, seq_len, n_embd]
-        let v = self.v_proj.forward(tokens);         // [batch, seq_len, n_embd]
+        // Project to queries, keys, values — each: [batch, seq_len, n_embd]
+        // e.g. with batch=1, seq_len=256, n_embd=128: [1, 256, 128]
+        let q = self.q_proj.forward(tokens.clone());
+        let k = self.k_proj.forward(tokens.clone());
+        let v = self.v_proj.forward(tokens);
 
-        // Split embedding dim across heads and move head dim before seq dim:
-        // [batch, seq_len, n_embd] → [batch, n_head, seq_len, head_size]
+        // Split n_embd across heads, then move head dim before seq dim:
+        // [batch, seq_len, n_embd] → [batch, seq_len, n_head, head_size]  (reshape)
+        //                          → [batch, n_head, seq_len, head_size]  (swap_dims)
+        // e.g. [1, 256, 128] → [1, 256, 1, 128] → [1, 1, 256, 128]
         let q = q.reshape([batch, seq_len, self.n_head, self.head_size]).swap_dims(1, 2);
         let k = k.reshape([batch, seq_len, self.n_head, self.head_size]).swap_dims(1, 2);
         let v = v.reshape([batch, seq_len, self.n_head, self.head_size]).swap_dims(1, 2);
