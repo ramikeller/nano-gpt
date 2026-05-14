@@ -10,6 +10,8 @@ use nano_gpt::training::generate;
 type B = Wgpu;
 
 fn main() {
+    let temperature = parse_temperature();
+
     let device = Default::default();
 
     let text = fetch_tiny_shakespeare();
@@ -28,6 +30,19 @@ fn main() {
 
     println!(
         "{}",
-        generate(&model, &vocab, "First Citizen:\n", 500, 0.8, gpt_config.block_size, &device)
+        generate(&model, &vocab, "First Citizen:\n", 500, temperature, gpt_config.block_size, &device)
     );
+}
+
+fn parse_temperature() -> f32 {
+    let args: Vec<String> = std::env::args().collect();
+    let mut i = 1;
+    while i < args.len() {
+        if args[i] == "--temperature" {
+            let val = args.get(i + 1).expect("--temperature requires a value");
+            return val.parse().expect("--temperature must be a number (e.g. 0.8)");
+        }
+        i += 1;
+    }
+    0.8 // default
 }
