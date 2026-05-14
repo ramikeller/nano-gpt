@@ -22,7 +22,7 @@ fn main() {
     let train_config = TrainConfig {
         max_iters: 3000,
         batch_size: 64,
-        eval_interval: 500,
+        eval_interval: 50,
         ..TrainConfig::default()
     };
 
