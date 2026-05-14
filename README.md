@@ -24,9 +24,11 @@ Downloads [tinyshakespeare](https://raw.githubusercontent.com/karpathy/char-rnn/
 
 ```
 cargo run --bin generate
+cargo run --bin generate -- --temperature 0.5   # more focused
+cargo run --bin generate -- --temperature 1.2   # more random
 ```
 
-Loads the saved checkpoint from `artifacts/` and generates text instantly — no retraining needed. Run `train` at least once first.
+Loads the saved checkpoint from `artifacts/` and generates text instantly — no retraining needed. Run `train` at least once first. Temperature defaults to `0.8`; lower values produce more predictable text, higher values more creative (and chaotic) output.
 
 ## Sample output after 3000 iterations
 
