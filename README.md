@@ -10,37 +10,45 @@ A character-level GPT built in Rust using the [Burn](https://github.com/tracel-a
 
 Current config: `block_size=256, n_embd=256, n_head=8, n_layer=6` (~4.8M parameters)
 
-## Training
+## Usage
+
+### Train
 
 ```
-cargo run
+cargo run --bin train
 ```
 
-Downloads [tinyshakespeare](https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt) on first run (~1MB). Trains on CPU or GPU via the `wgpu` backend (Metal on macOS, Vulkan/DX12 elsewhere).
+Downloads [tinyshakespeare](https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt) on first run (~1MB). Trains on CPU or GPU via the `wgpu` backend (Metal on macOS, Vulkan/DX12 elsewhere). Saves the trained weights to `artifacts/model.bin` and config to `artifacts/config.json` when done.
 
-## Sample output after 1000 iterations
+### Generate
+
+```
+cargo run --bin generate
+```
+
+Loads the saved checkpoint from `artifacts/` and generates text instantly — no retraining needed. Run `train` at least once first.
+
+## Sample output after 3000 iterations
 
 ```
 First Citizen:
-Shall may I have not so with on the stres and supping.
+And I say, the first Coriolanus
+With nothing so much to bear the declamOnd.
 
-CLAUDIO:
-Fie that I who shall.
+BONTAGOT:
+Well said 'I can say 'sir,' become mock:
+I would have no grace soldiers.
 
-CLAURENCE:
-Desperit him to show him mooth a king.
+CAMILLO:
+To sleech you to the chase is anguish on:
+We will not stay it of; for 'tis it so.
 
-AUNTIO:
-I have she beseem'd:
-I would are the consul of at friend subjects
-Against they hidst with buck by in the blood.
-
-LUCIO:
-A look unto fools, and face be pi
+POLIXENES:
+Here's a lover spine for his love.
 ```
 
-After 1000 iterations the model has learned:
+After 3000 iterations (loss 0.98) the model has learned:
 - Speaker label format (`NAME:` followed by a newline)
-- Real Shakespeare character names — CLAUDIO, LUCIO, CLARENCE
-- Elizabethan vocabulary — "beseem'd", "consul", "hidst", "fools"
-- Iambic-ish line breaks and punctuation patterns
+- Real Shakespeare character names — CAMILLO, POLIXENES, CORIOLANUS
+- Elizabethan vocabulary and contractions — "'tis", "'sir'"
+- Coherent sentence structure and punctuation patterns

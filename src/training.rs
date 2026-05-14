@@ -1,5 +1,6 @@
 use burn::data::dataloader::batcher::Batcher;
 use burn::data::dataset::Dataset;
+use burn::record::{BinFileRecorder, FullPrecisionSettings};
 use burn::tensor::backend::AutodiffBackend;
 use burn::nn::loss::CrossEntropyLossConfig;
 use burn::optim::{AdamWConfig, GradientsParams, Optimizer};
@@ -98,6 +99,17 @@ pub fn train<B: AutodiffBackend>(
         device,
     );
     println!("{}", generated);
+
+    // Save weights so `cargo run --bin generate` can reload them without retraining
+    std::fs::create_dir_all("artifacts").expect("failed to create artifacts dir");
+    let recorder = BinFileRecorder::<FullPrecisionSettings>::new();
+    model
+        .save_file("artifacts/model", &recorder)
+        .expect("failed to save checkpoint");
+    gpt_config
+        .save("artifacts/config.json")
+        .expect("failed to save config");
+    println!("\nCheckpoint saved to artifacts/");
 }
 
 // ---------- Text generation -------------------------------------------------

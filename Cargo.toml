@@ -7,6 +7,10 @@ edition = "2021"
 name = "train"
 path = "src/main.rs"
 
+[[bin]]
+name = "generate"
+path = "src/bin/generate.rs"
+
 [dependencies]
 # Burn core: tensors, nn modules, the Module/Learner traits
 burn = { version = "0.21", features = ["train", "wgpu"] }

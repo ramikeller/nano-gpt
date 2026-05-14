@@ -1,13 +1,9 @@
-mod data;
-mod model;
-mod training;
-
 use burn::backend::Autodiff;
 use burn_wgpu::Wgpu;
 
-use data::{fetch_tiny_shakespeare, Vocabulary};
-use model::GptConfig;
-use training::{train, TrainConfig};
+use nano_gpt::data::{fetch_tiny_shakespeare, Vocabulary};
+use nano_gpt::model::GptConfig;
+use nano_gpt::training::{train, TrainConfig};
 
 // Autodiff<Wgpu> runs on Metal (macOS) / Vulkan / DX12 via the wgpu backend
 type B = Autodiff<Wgpu>;
