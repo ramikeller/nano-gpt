@@ -9,11 +9,10 @@ path = "src/main.rs"
 
 [dependencies]
 # Burn core: tensors, nn modules, the Module/Learner traits
-burn = { version = "0.21", features = ["train", "ndarray"] }
+burn = { version = "0.21", features = ["train", "wgpu"] }
 
-# Pure-Rust CPU backend — no CUDA/Metal drivers needed to get started.
-# Swap in burn-cuda or burn-wgpu later with a one-line change.
-burn-ndarray = { version = "0.21" }
+# wgpu backend — runs on Metal (Apple Silicon / Intel GPU) via WebGPU
+burn-wgpu = { version = "0.21" }
 
 # Config and checkpoint serialization
 serde = { version = "1", features = ["derive"] }
