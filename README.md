@@ -15,7 +15,8 @@ Current config: `block_size=256, n_embd=256, n_head=8, n_layer=6` (~4.8M paramet
 ### Train
 
 ```
-cargo run --bin train
+cargo run --bin train                       # default 3000 iterations
+cargo run --bin train -- --iters 5000       # custom iteration count
 ```
 
 Downloads [tinyshakespeare](https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt) on first run (~1MB). Trains on CPU or GPU via the `wgpu` backend (Metal on macOS, Vulkan/DX12 elsewhere). Saves the trained weights to `artifacts/model.bin` and config to `artifacts/config.json` when done.
