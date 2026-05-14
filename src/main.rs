@@ -24,7 +24,7 @@ fn main() {
     //                               65     256    256    8     6
 
     let train_config = TrainConfig {
-        max_iters: 1000,
+        max_iters: 3000,
         batch_size: 64,
         eval_interval: 500,
         ..TrainConfig::default()
