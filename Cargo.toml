@@ -24,3 +24,6 @@ serde_json = "1"
 
 # RNG for data shuffling and inference sampling
 rand = "0.8"
+
+# CLI argument parsing
+clap = { version = "4", features = ["derive"] }
