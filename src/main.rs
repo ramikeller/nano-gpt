@@ -1,14 +1,16 @@
 mod data;
 mod model;
+mod training;
 
-use burn::prelude::*;
+use burn::backend::Autodiff;
 use burn_ndarray::NdArray;
 
-use burn::data::dataset::Dataset;
-use data::{fetch_tiny_shakespeare, TextDataset, Vocabulary};
+use data::{fetch_tiny_shakespeare, Vocabulary};
 use model::GptConfig;
+use training::{train, TrainConfig};
 
-type B = NdArray;
+// Autodiff<NdArray> wraps the CPU backend with gradient tracking for training
+type B = Autodiff<NdArray>;
 
 fn main() {
     let device = Default::default();
@@ -17,21 +19,11 @@ fn main() {
     let vocab = Vocabulary::from_text(&text);
     let tokens = vocab.encode(&text);
 
-    let block_size = 256;
-    let (train, _val) = TextDataset::train_val_split(tokens, block_size, 0.1);
+    let gpt_config = GptConfig::new(vocab.size(), 64, 64, 4, 2);
+    //                               vocab  block n_embd heads layers
+    //                               65     64    64     4     2
 
-    let config = GptConfig::new(vocab.size(), block_size, 128, 1, 1);
-    let model = config.init::<B>(&device);
+    let train_config = TrainConfig::default();
 
-    println!("Parameters: {}", model.num_params());
-
-    let sample = train.get(0).unwrap();
-    let tensor_tokens: Tensor<B, 2, Int> = Tensor::from_data(
-        TensorData::new(sample.input, [1, block_size]),
-        &device,
-    );
-
-    let logits = model.forward(tensor_tokens);
-    println!("Logits shape: {:?}", logits.dims());
-    // expected: [1, 256, 65]  — 65 scores per position, one per vocab character
+    train::<B>(&train_config, &gpt_config, &vocab, tokens, &device);
 }
